@@ -1318,48 +1318,95 @@ $(document).ready(function(){
     });
 
     // ====== Exportar / Importar ======>
-    $('#btnExportarDatos').click(() => {
+    // Función para manejar la descarga en APK (Cordova)
+    function descargarEnAPK(data, nombreArchivo) {
+        return new Promise((resolve, reject) => {
+            if (!window.cordova || !window.cordova.file) {
+                reject(new Error('API de archivos no disponible'));
+                return;
+            }
+
+            // Obtener el directorio de documentos
+            const fs = window.cordova.file.externalRootDirectory + 'Documents/';
+            
+            // Crear el archivo
+            window.resolveLocalFileSystemURL(fs, function(directoryEntry) {
+                directoryEntry.getFile(nombreArchivo, { create: true, exclusive: false }, 
+                    function(fileEntry) {
+                        fileEntry.createWriter(function(fileWriter) {
+                            fileWriter.onwriteend = function() {
+                                const rutaCompleta = fs + nombreArchivo;
+                                showAlert(`Respaldo guardado en: ${rutaCompleta}`, 'success');
+                                resolve(rutaCompleta);
+                            };
+                            fileWriter.onerror = function(e) {
+                                console.error('Error al escribir el archivo', e);
+                                reject(e);
+                            };
+                            fileWriter.write(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+                        }, reject);
+                    }, reject);
+            }, reject);
+        });
+    }
+
+    // Función para descargar en navegador
+    function descargarEnNavegador(data, nombreArchivo) {
+        return new Promise((resolve, reject) => {
+            try {
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                link.href = url;
+                link.download = nombreArchivo;
+                document.body.appendChild(link);
+                link.click();
+                
+                // Limpiar
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    resolve();
+                }, 100);
+                
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
+    // Manejador del botón de exportar
+    $('#btnExportarDatos').click(async () => {
         try {
             const data = storage.exportAllData();
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const nombreArchivo = `fitpro_backup_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
             
-            // Crear un enlace temporal
-            const exportFileDefaultName = `fitpro_backup_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-            
-            // Intentar con el método estándar primero
+            // Intentar con Cordova (APK) primero
             try {
-                const linkElement = document.createElement('a');
-                linkElement.setAttribute('href', dataUri);
-                linkElement.setAttribute('download', exportFileDefaultName);
-                linkElement.click();
-                showAlert('Archivo de respaldo listo para descargar');
-                return;
-            } catch (e) {
-                console.log('Método estándar falló, intentando alternativa', e);
-            }
-            
-            // Método alternativo para navegadores móviles
-            try {
-                // Para Android/Chrome
-                if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-                    const blob = new Blob([dataStr], {type: 'application/json'});
-                    window.navigator.msSaveOrOpenBlob(blob, exportFileDefaultName);
-                    showAlert('Archivo de respaldo listo para descargar');
-                } else {
-                    // Abrir en nueva ventana como último recurso
-                    const newWindow = window.open();
-                    newWindow.document.write(`<pre>${dataStr}</pre>`);
+                await descargarEnAPK(data, nombreArchivo);
+                showAlert('Respaldo guardado exitosamente', 'success');
+            } catch (apkError) {
+                console.log('No se pudo guardar con Cordova, intentando con método de navegador...', apkError);
+                
+                // Si falla, intentar con el método del navegador
+                try {
+                    await descargarEnNavegador(data, nombreArchivo);
+                    showAlert('Archivo de respaldo listo para descargar', 'success');
+                } catch (navError) {
+                    console.error('Error en método de navegador:', navError);
+                    
+                    // Último recurso: mostrar en ventana
+                    const newWindow = window.open('', '_blank');
+                    newWindow.document.write(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
+                    newWindow.document.title = 'Copia de respaldo - Guardar manualmente';
                     newWindow.document.close();
-                    showAlert('Los datos se han mostrado en una nueva ventana. Por favor, copia y guarda manualmente como archivo .json');
+                    showAlert('No se pudo descargar automáticamente. Los datos se abrieron en una nueva ventana. Por favor, copia y guarda manualmente.', 'info');
                 }
-            } catch (e) {
-                console.error('Error al exportar datos:', e);
-                showAlert('Error al exportar datos. Intenta nuevamente o usa otro navegador.', 'danger');
             }
         } catch (e) {
             console.error('Error al exportar datos:', e);
-            showAlert('Error al exportar datos: ' + e.message, 'danger');
+            showAlert('Error al exportar datos: ' + (e.message || 'Error desconocido'), 'danger');
         }
     });
 
