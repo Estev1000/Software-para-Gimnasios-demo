@@ -924,43 +924,15 @@ function hideContainer(id) {
     document.getElementById(id).classList.add("d-none"); 
 }
 
-function showAlert(message, type = 'success', isHtml = false) {
+function showAlert(message, type = 'success') {
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-    
-    if (isHtml) {
-        // Si es HTML, usar innerHTML directamente
-        alertDiv.innerHTML = `${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-    } else {
-        // Si no es HTML, crear nodos de texto para evitar inyección de HTML
-        const messageNode = document.createTextNode(message);
-        const closeButton = document.createElement('button');
-        closeButton.type = 'button';
-        closeButton.className = 'btn-close';
-        closeButton.setAttribute('data-bs-dismiss', 'alert');
-        closeButton.setAttribute('aria-label', 'Cerrar');
-        
-        alertDiv.appendChild(messageNode);
-        alertDiv.appendChild(closeButton);
-    }
-    
-    // Insertar la alerta después del banner de demo si existe, o al principio del body
-    const demoBanner = document.querySelector('.demo-banner');
-    if (demoBanner && demoBanner.nextSibling) {
-        demoBanner.parentNode.insertBefore(alertDiv, demoBanner.nextSibling);
-    } else {
-        document.body.insertBefore(alertDiv, document.body.firstChild);
-    }
-    
-    // Configurar tiempo de cierre automático
-    setTimeout(() => {
-        if (alertDiv && alertDiv.parentNode) {
-            const bsAlert = new bootstrap.Alert(alertDiv);
-            bsAlert.close();
-        }
-    }, 5000);
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.insertBefore(alertDiv, document.body.firstChild);
+    setTimeout(() => alertDiv.remove(), 5000);
 }
 
 // Actualizar estadísticas
@@ -1346,177 +1318,39 @@ $(document).ready(function(){
     });
 
     // ====== Exportar / Importar ======>
-    // Función para manejar la descarga en APK (Cordova)
-    function descargarEnAPK(data, nombreArchivo) {
-        return new Promise((resolve, reject) => {
-            try {
-                if (!window.cordova || !window.cordova.file) {
-                    reject(new Error('API de archivos no disponible'));
-                    return;
-                }
-
-                // Usar el directorio de descargas que tiene permisos de escritura
-                const fs = cordova.file.externalDataDirectory || cordova.file.dataDirectory;
-                
-                window.resolveLocalFileSystemURL(fs, function(directoryEntry) {
-                    directoryEntry.getFile(nombreArchivo, { create: true, exclusive: false }, 
-                        function(fileEntry) {
-                            fileEntry.createWriter(function(fileWriter) {
-                                fileWriter.onwriteend = function() {
-                                    // Mostrar mensaje con opción para abrir el archivo
-                                    const rutaCompleta = fileEntry.toURL();
-                                    showAlert(
-                                        `Respaldo guardado exitosamente. ` +
-                                        `<a href="#" onclick="window.open('${rutaCompleta}', '_system'); return false;">Abrir archivo</a>`,
-                                        'success',
-                                        true
-                                    );
-                                    resolve(rutaCompleta);
-                                };
-                                fileWriter.onerror = function(e) {
-                                    console.error('Error al escribir el archivo', e);
-                                    reject(e);
-                                };
-                                fileWriter.write(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-                            }, function(e) {
-                                console.error('Error al crear el escritor de archivos', e);
-                                reject(e);
-                            });
-                        }, 
-                        function(e) {
-                            console.error('Error al obtener el archivo', e);
-                            reject(e);
-                        }
-                    );
-                }, function(e) {
-                    console.error('Error al acceder al sistema de archivos', e);
-                    reject(e);
-                });
-            } catch (e) {
-                console.error('Error inesperado en descargarEnAPK', e);
-                reject(e);
-            }
-        });
-    }
-
-    // Función para descargar en navegador
-    function descargarEnNavegador(data, nombreArchivo) {
-        return new Promise((resolve, reject) => {
-            try {
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                
-                link.href = url;
-                link.download = nombreArchivo;
-                document.body.appendChild(link);
-                link.click();
-                
-                // Limpiar
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                    resolve();
-                }, 100);
-                
-            } catch (e) {
-                reject(e);
-            }
-        });
-    }
-
-    // Manejador del botón de exportar
-    $('#btnExportarDatos').click(async () => {
-        try {
-            const data = storage.exportAllData();
-            const nombreArchivo = `fitpro_backup_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-            
-            // Intentar con Cordova (APK) primero
-            try {
-                await descargarEnAPK(data, nombreArchivo);
-                showAlert('Respaldo guardado exitosamente', 'success');
-            } catch (apkError) {
-                console.log('No se pudo guardar con Cordova, intentando con método de navegador...', apkError);
-                
-                // Si falla, intentar con el método del navegador
-                try {
-                    await descargarEnNavegador(data, nombreArchivo);
-                    showAlert('Archivo de respaldo listo para descargar', 'success');
-                } catch (navError) {
-                    console.error('Error en método de navegador:', navError);
-                    
-                    // Último recurso: mostrar en ventana
-                    const newWindow = window.open('', '_blank');
-                    newWindow.document.write(`<pre>${JSON.stringify(data, null, 2)}</pre>`);
-                    newWindow.document.title = 'Copia de respaldo - Guardar manualmente';
-                    newWindow.document.close();
-                    showAlert('No se pudo descargar automáticamente. Los datos se abrieron en una nueva ventana. Por favor, copia y guarda manualmente.', 'info');
-                }
-            }
-        } catch (e) {
-            console.error('Error al exportar datos:', e);
-            showAlert('Error al exportar datos: ' + (e.message || 'Error desconocido'), 'danger');
-        }
+    $('#btnExportarDatos').click(() => {
+        const data = storage.exportAllData();
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `fitpro_backup_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
     });
 
     $('#inputImportarDatos').on('change', function(e){
-        try {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            // Verificar el tipo de archivo
-            if (!file.name.endsWith('.json') && file.type !== 'application/json') {
-                showAlert('Por favor, selecciona un archivo JSON válido', 'warning');
-                return;
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const data = JSON.parse(ev.target.result);
+                storage.importAllData(data);
+                populateClaseOptions();
+                updateStats();
+                showAlert('Datos importados correctamente');
+                // Refrescar tablas visibles
+                if(!$('#tablaUsuariosContainer').hasClass('d-none')) $('#btnMostrarUsuarios').click();
+                if(!$('#tablaPagosContainer').hasClass('d-none')) $('#btnMostrarPagos').click();
+                if(!$('#tablaClasesContainer').hasClass('d-none')) $('#btnMostrarClases').click();
+            } catch(err){
+                console.error(err);
+                showAlert('Archivo JSON inválido','danger');
             }
-            
-            const reader = new FileReader();
-            
-            reader.onload = function(ev) {
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    
-                    // Validar la estructura básica del archivo JSON
-                    const requiredKeys = ['usuarios', 'pagos', 'clases', 'inscripciones'];
-                    const isValid = requiredKeys.every(key => key in data);
-                    
-                    if (!isValid) {
-                        throw new Error('El archivo no tiene el formato correcto');
-                    }
-                    
-                    // Confirmar antes de sobrescribir datos
-                    if (confirm('¿Estás seguro de que deseas importar estos datos? Se sobrescribirán los datos actuales.')) {
-                        storage.importAllData(data);
-                        populateClaseOptions();
-                        updateStats();
-                        showAlert('Datos importados correctamente', 'success');
-                        
-                        // Refrescar tablas visibles
-                        if(!$('#tablaUsuariosContainer').hasClass('d-none')) $('#btnMostrarUsuarios').click();
-                        if(!$('#tablaPagosContainer').hasClass('d-none')) $('#btnMostrarPagos').click();
-                        if(!$('#tablaClasesContainer').hasClass('d-none')) $('#btnMostrarClases').click();
-                    }
-                } catch(err) {
-                    console.error('Error al procesar el archivo:', err);
-                    showAlert('Error al importar: ' + (err.message || 'Formato de archivo inválido'), 'danger');
-                } finally {
-                    // Limpiar el input para permitir cargar el mismo archivo de nuevo si es necesario
-                    $(this).val('');
-                }
-            };
-            
-            reader.onerror = function() {
-                showAlert('Error al leer el archivo', 'danger');
-                $(this).val('');
-            };
-            
-            reader.readAsText(file, 'UTF-8');
-            
-        } catch(err) {
-            console.error('Error en el proceso de importación:', err);
-            showAlert('Error al importar datos: ' + (err.message || 'Error desconocido'), 'danger');
-            $(this).val('');
-        }
+        };
+        reader.readAsText(file);
+        $(this).val('');
     });
 });
 
