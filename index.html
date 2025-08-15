@@ -1319,38 +1319,108 @@ $(document).ready(function(){
 
     // ====== Exportar / Importar ======>
     $('#btnExportarDatos').click(() => {
-        const data = storage.exportAllData();
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `fitpro_backup_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        try {
+            const data = storage.exportAllData();
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            // Crear un enlace temporal
+            const exportFileDefaultName = `fitpro_backup_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+            
+            // Intentar con el método estándar primero
+            try {
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                showAlert('Archivo de respaldo listo para descargar');
+                return;
+            } catch (e) {
+                console.log('Método estándar falló, intentando alternativa', e);
+            }
+            
+            // Método alternativo para navegadores móviles
+            try {
+                // Para Android/Chrome
+                if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                    const blob = new Blob([dataStr], {type: 'application/json'});
+                    window.navigator.msSaveOrOpenBlob(blob, exportFileDefaultName);
+                    showAlert('Archivo de respaldo listo para descargar');
+                } else {
+                    // Abrir en nueva ventana como último recurso
+                    const newWindow = window.open();
+                    newWindow.document.write(`<pre>${dataStr}</pre>`);
+                    newWindow.document.close();
+                    showAlert('Los datos se han mostrado en una nueva ventana. Por favor, copia y guarda manualmente como archivo .json');
+                }
+            } catch (e) {
+                console.error('Error al exportar datos:', e);
+                showAlert('Error al exportar datos. Intenta nuevamente o usa otro navegador.', 'danger');
+            }
+        } catch (e) {
+            console.error('Error al exportar datos:', e);
+            showAlert('Error al exportar datos: ' + e.message, 'danger');
+        }
     });
 
     $('#inputImportarDatos').on('change', function(e){
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => {
-            try {
-                const data = JSON.parse(ev.target.result);
-                storage.importAllData(data);
-                populateClaseOptions();
-                updateStats();
-                showAlert('Datos importados correctamente');
-                // Refrescar tablas visibles
-                if(!$('#tablaUsuariosContainer').hasClass('d-none')) $('#btnMostrarUsuarios').click();
-                if(!$('#tablaPagosContainer').hasClass('d-none')) $('#btnMostrarPagos').click();
-                if(!$('#tablaClasesContainer').hasClass('d-none')) $('#btnMostrarClases').click();
-            } catch(err){
-                console.error(err);
-                showAlert('Archivo JSON inválido','danger');
+        try {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Verificar el tipo de archivo
+            if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+                showAlert('Por favor, selecciona un archivo JSON válido', 'warning');
+                return;
             }
-        };
-        reader.readAsText(file);
-        $(this).val('');
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(ev) {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    
+                    // Validar la estructura básica del archivo JSON
+                    const requiredKeys = ['usuarios', 'pagos', 'clases', 'inscripciones'];
+                    const isValid = requiredKeys.every(key => key in data);
+                    
+                    if (!isValid) {
+                        throw new Error('El archivo no tiene el formato correcto');
+                    }
+                    
+                    // Confirmar antes de sobrescribir datos
+                    if (confirm('¿Estás seguro de que deseas importar estos datos? Se sobrescribirán los datos actuales.')) {
+                        storage.importAllData(data);
+                        populateClaseOptions();
+                        updateStats();
+                        showAlert('Datos importados correctamente', 'success');
+                        
+                        // Refrescar tablas visibles
+                        if(!$('#tablaUsuariosContainer').hasClass('d-none')) $('#btnMostrarUsuarios').click();
+                        if(!$('#tablaPagosContainer').hasClass('d-none')) $('#btnMostrarPagos').click();
+                        if(!$('#tablaClasesContainer').hasClass('d-none')) $('#btnMostrarClases').click();
+                    }
+                } catch(err) {
+                    console.error('Error al procesar el archivo:', err);
+                    showAlert('Error al importar: ' + (err.message || 'Formato de archivo inválido'), 'danger');
+                } finally {
+                    // Limpiar el input para permitir cargar el mismo archivo de nuevo si es necesario
+                    $(this).val('');
+                }
+            };
+            
+            reader.onerror = function() {
+                showAlert('Error al leer el archivo', 'danger');
+                $(this).val('');
+            };
+            
+            reader.readAsText(file, 'UTF-8');
+            
+        } catch(err) {
+            console.error('Error en el proceso de importación:', err);
+            showAlert('Error al importar datos: ' + (err.message || 'Error desconocido'), 'danger');
+            $(this).val('');
+        }
     });
 });
 
