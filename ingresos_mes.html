@@ -100,8 +100,10 @@
         // AUTENTICACIÓN AUTOMÁTICA
         $(document).ready(function () {
             const urlParams = new URLSearchParams(window.location.search);
-            // Si viene desde index.html verificado, mostramos contenido
-            if (urlParams.get('auth') === 'verified') {
+            const isPremium = localStorage.getItem('gym_premium_active') === 'true';
+
+            // Si viene desde index.html verificado O es usuario Premium activo
+            if (urlParams.get('auth') === 'verified' || isPremium) {
                 $('#authOverlay').hide();
                 $('#protectedContent').show();
                 renderTable();
