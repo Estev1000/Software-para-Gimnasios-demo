@@ -414,6 +414,9 @@
                     </button>
                     <a href="ingresos.html" target="_blank" class="btn btn-sm btn-outline-light me-2"><i
                             class="fas fa-door-open me-1"></i>Ingresos</a>
+                    <button class="btn btn-sm btn-outline-info" onclick="openSupportModal()">
+                        <i class="fas fa-headset me-1"></i>Soporte
+                    </button>
                 </div>
             </div>
         </nav>
@@ -1606,14 +1609,8 @@
             }
             // =========================================
 
-            const password = prompt("Por favor, ingresa la clave de administrador para ver los ingresos:", "");
-            if (password === 'duenos2025') {
-                window.open('ingresos_mes.html', '_blank');
-            } else {
-                if (password !== null) { // Si no canceló
-                    showAlert('Clave incorrecta. Acceso denegado.', 'danger');
-                }
-            }
+            // SI ES PREMIUM, ENTRA DIRECTO (Bypass Password)
+            window.open('ingresos_mes.html?auth=verified', '_blank');
         });
 
         // =====================================================
@@ -1621,6 +1618,10 @@
         // =====================================================
         window.openPaymentModal = function () {
             new bootstrap.Modal(document.getElementById('modalPremium')).show();
+        };
+
+        window.openSupportModal = function () {
+            new bootstrap.Modal(document.getElementById('modalSupport')).show();
         };
 
         window.enterProCode = function () {
@@ -1752,27 +1753,7 @@
     </div>
 
     <script>
-        // Acceso oculto para dueños (no visible para empleados)
-        // Combinación Ctrl+Shift+I solicita contraseña y abre ingresos_mes.html
-        (function () {
-            const OWNER_PASS = 'Empresa24.'; // misma clave que en ingresos_mes.html
-            // Atajo oculto
-            document.addEventListener('keydown', e => {
-                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
-                    e.preventDefault();
-                    solicitarClave();
-                }
-            });
-            // Click en enlace del menú
-            const link = document.getElementById('btnIngresosMes');
-            if (link) { link.addEventListener('click', e => { e.preventDefault(); solicitarClave(); }); }
-
-            function solicitarClave() {
-                const pw = prompt('Acceso Dueños - Ingresar contraseña:');
-                if (pw === OWNER_PASS) { window.open('ingresos_mes.html', '_blank'); }
-                else if (pw !== null) { alert('Contraseña incorrecta'); }
-            }
-        })();
+        // (Código de acceso oculto eliminado para evitar conflictos con la versión Premium)
     </script>
     <!-- Modal Premium / Mercado Pago -->
     <div class="modal fade" id="modalPremium" tabindex="-1" aria-hidden="true">
@@ -1813,6 +1794,10 @@
                                     <i class="fas fa-copy me-1"></i>Copiar Link
                                 </button>
                             </div>
+                            <p style="font-size: 0.85em; opacity: 0.8; margin-top: 15px;">
+                                <strong>💡 Tecnología Smart-Link:</strong> Una vez activo, tu acceso queda guardado en
+                                este dispositivo. ¡No necesitas contraseñas para volver a entrar!
+                            </p>
                         </div>
                     </div>
 
@@ -1827,6 +1812,51 @@
         </div>
     </div>
 
+    <!-- Modal Soporte -->
+    <div class="modal fade" id="modalSupport" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white"
+                style="background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%); border: 1px solid rgba(255,255,255,0.1);">
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title"><i class="fas fa-headset text-info me-2"></i>Centro de Soporte</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <p class="mb-4">¿Tenés alguna sugerencia o problema? ¡Contáctame directamente!</p>
+
+                    <div class="d-grid gap-3 mb-4">
+                        <a href="https://wa.me/5492664024390" target="_blank" class="btn btn-success btn-lg">
+                            <i class="fab fa-whatsapp me-2"></i>Chat por WhatsApp
+                        </a>
+                    </div>
+
+                    <div class="text-start border-top border-secondary pt-3">
+                        <p class="small text-info mb-2"><i class="fas fa-envelope me-1"></i>O envíanos un mensaje:</p>
+                        <form action="https://formspree.io/f/mvgzqkpv" method="POST" target="_blank">
+                            <div class="mb-2">
+                                <input type="email" name="email"
+                                    class="form-control form-control-sm bg-dark text-light border-secondary"
+                                    placeholder="Tu Email para responderte" required>
+                            </div>
+                            <div class="mb-2">
+                                <textarea name="message"
+                                    class="form-control form-control-sm bg-dark text-light border-secondary" rows="3"
+                                    placeholder="Escribe tu consulta o sugerencia aquí..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-outline-light btn-sm w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Enviar Correo
+                            </button>
+                        </form>
+                    </div>
+
+                    <p class="mt-4 text-muted small">
+                        FitPro Elite v4.0 - Desarrollado con ❤️ para Argentina
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
