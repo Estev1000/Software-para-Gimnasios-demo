@@ -412,6 +412,9 @@
                     <button id="btnPremium" class="btn btn-sm btn-premium me-3" onclick="openPaymentModal()">
                         <i class="fas fa-crown me-1"></i>PREMIUM
                     </button>
+                    <a href="loguin.html" target="_blank" class="btn btn-sm btn-outline-warning me-2">
+                        <i class="fas fa-key me-1"></i>Modo Acceso
+                    </a>
                     <a href="ingresos.html" target="_blank" class="btn btn-sm btn-outline-light me-2"><i
                             class="fas fa-door-open me-1"></i>Ingresos</a>
                     <button class="btn btn-sm btn-outline-info" onclick="openSupportModal()">
@@ -970,7 +973,17 @@
             const pagos = storage.getPagos();
             const clases = storage.getClases();
 
-            document.getElementById('totalUsuarios').textContent = usuarios.length;
+            // Filtrar usuarios activos (vencimiento >= hoy)
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            const usuariosActivos = usuarios.filter(u => {
+                if (!u.fecha_vencimiento) return false;
+                const vencimiento = new Date(u.fecha_vencimiento + 'T23:59:59');
+                return vencimiento >= hoy;
+            });
+
+            document.getElementById('totalUsuarios').textContent = usuariosActivos.length;
             document.getElementById('totalClases').textContent = clases.length;
 
             // Calcular ingresos del mes actual
@@ -1182,8 +1195,35 @@
                     return;
                 }
 
+                // Lógica de Renovación Automática
+                let mensajeExtra = "";
+                if (body.tipo === 'Mensualidad') {
+                    // Determinar fecha base: si todavía no vence, se suma a la fecha actual de vencimiento.
+                    // Si ya venció, se suma a partir de HOY.
+                    let fechaBase = new Date(); // Hoy por defecto
+                    const hoy = new Date();
+
+                    if (usuario.fecha_vencimiento) {
+                        // Ajustar zona horaria añadiendo horas para evitar problemas de conversión
+                        const vencimientoActual = new Date(usuario.fecha_vencimiento + 'T12:00:00');
+                        if (vencimientoActual > hoy) {
+                            fechaBase = vencimientoActual;
+                        }
+                    }
+
+                    // Sumar 1 mes
+                    fechaBase.setMonth(fechaBase.getMonth() + 1);
+
+                    // Formatear a YYYY-MM-DD
+                    const nuevaFechaStr = fechaBase.toISOString().split('T')[0];
+
+                    // Actualizar usuario
+                    storage.updateUsuario(usuario.id, { fecha_vencimiento: nuevaFechaStr });
+                    mensajeExtra = `<br><strong>¡Membresía renovada hasta el ${nuevaFechaStr}!</strong>`;
+                }
+
                 storage.addPago(body);
-                showAlert('Pago registrado correctamente');
+                showAlert(`Pago registrado correctamente.${mensajeExtra}`, 'success');
                 e.target.reset();
                 $('#btnMostrarPagos').click();
                 updateStats();
