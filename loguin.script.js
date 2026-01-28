@@ -125,9 +125,52 @@ function clearMessage() {
 }
 
 function playSound(type) {
-    // Optional: Add Audio logic here if needed
-    // const audio = new Audio(type === 'success' ? 'success.mp3' : 'error.mp3');
-    // audio.play().catch(e => console.log('Audio error:', e));
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+
+    if (type === 'success') {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, now); // A5
+        oscillator.frequency.exponentialRampToValueAtTime(1760, now + 0.1); // Pequeño efecto "coin"
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+        oscillator.start(now);
+        oscillator.stop(now + 0.3);
+    } else {
+        // ALARMA DE ERROR (VENCIDO)
+        // Secuencia de 3 pitidos fuertes y agresivos
+        const playAlarmBeep = (startTime) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'square'; // Onda cuadrada = sonido más "áspero" y fuerte (tipo alarma)
+            osc.frequency.setValueAtTime(600, startTime);
+            osc.frequency.linearRampToValueAtTime(400, startTime + 0.15); // Efecto de caída
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            // Volumen ALTO (0.5)
+            gain.gain.setValueAtTime(0.5, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
+
+            osc.start(startTime);
+            osc.stop(startTime + 0.15);
+        };
+
+        // Reproducir 3 pitidos con espacios de 0.2 segundos
+        playAlarmBeep(now);
+        playAlarmBeep(now + 0.25);
+        playAlarmBeep(now + 0.5);
+    }
 }
 
 // Keyboard support

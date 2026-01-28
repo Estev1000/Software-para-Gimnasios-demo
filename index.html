@@ -512,6 +512,13 @@
                     <i class="fas fa-door-open me-2"></i>Ingresos
                 </a>
             </li>
+            <!-- Manual de Usuario -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button"
+                    role="tab">
+                    <i class="fas fa-book-open me-2"></i>Manual
+                </button>
+            </li>
             <!-- Visible solo si se conoce la contraseña -->
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="#" id="btnIngresosMes" role="tab">
@@ -601,8 +608,9 @@
                     <h5 class="mb-3"><i class="fas fa-credit-card me-2"></i>Registrar Nuevo Pago</h5>
                     <form id="formRegistrarPago" class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">ID del Miembro</label>
-                            <input id="usuario_pago" name="usuario_id" type="number" class="form-control" required>
+                            <label class="form-label">ID o DNI del Miembro</label>
+                            <input id="usuario_pago" name="usuario_id" type="text" class="form-control"
+                                placeholder="Ej: 1 o 12345678" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Fecha</label>
@@ -658,8 +666,9 @@
                     <h5 class="mb-3"><i class="fas fa-search me-2"></i>Buscar por ID</h5>
                     <form id="formBuscarUsuario" class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">ID del Miembro</label>
-                            <input id="usuario_id_buscar" type="number" class="form-control" required>
+                            <label class="form-label">ID o DNI del Miembro</label>
+                            <input id="usuario_id_buscar" type="text" class="form-control"
+                                placeholder="Ingresa ID o DNI..." required>
                         </div>
                         <div class="col-12">
                             <button type="submit" class="btn btn-primary-custom btn-custom">
@@ -688,8 +697,9 @@
                     <h5 class="mb-3"><i class="fas fa-user-plus me-2"></i>Inscribir Miembro</h5>
                     <form id="formClasesUsuario" class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label">ID del Miembro</label>
-                            <input id="usuario_clase" type="number" class="form-control" required>
+                            <label class="form-label">ID o DNI del Miembro</label>
+                            <input id="usuario_clase" type="text" class="form-control" placeholder="Ej: 1 o 12345678"
+                                required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Clase</label>
@@ -757,6 +767,163 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Manual de Usuario Content -->
+            <div class="tab-pane fade" id="manual" role="tabpanel">
+                <div class="section-title">Manual de Usuario - FitPro Elite</div>
+
+                <div class="row">
+                    <div class="col-lg-3 d-none d-lg-block">
+                        <div class="list-group sticky-top" style="top: 20px; z-index: 10;">
+                            <a href="#m-intro" class="list-group-item list-group-item-action">Introducción</a>
+                            <a href="#m-pasos" class="list-group-item list-group-item-action">Primeros Pasos</a>
+                            <a href="#m-dashboard" class="list-group-item list-group-item-action">Dashboard</a>
+                            <a href="#m-miembros" class="list-group-item list-group-item-action">Miembros</a>
+                            <a href="#m-pagos" class="list-group-item list-group-item-action">Pagos y Renovaciones</a>
+                            <a href="#m-ingresos" class="list-group-item list-group-item-action">Control de Acceso</a>
+                            <a href="#m-clases" class="list-group-item list-group-item-action">Gestión de Clases</a>
+                            <a href="#m-backup" class="list-group-item list-group-item-action">Copias de Seguridad</a>
+                        </div>
+                    </div>
+                    <div class="col-lg-9">
+                        <div class="manual-content p-4 bg-light rounded-3 shadow-sm">
+                            <div class="text-center mb-5">
+                                <img src="logo.png" alt="Logo" class="img-fluid mb-3" style="max-height: 80px;">
+                                <h2 id="m-intro" class="fw-bold">FitPro Elite: Sistema de Gestión</h2>
+                                <p class="text-muted">Guía completa para la administración profesional de tu gimnasio.
+                                </p>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a href="Manual de Usuario - FitPro Elite.pdf" target="_blank"
+                                        class="btn btn-danger btn-sm">
+                                        <i class="fas fa-file-pdf me-2"></i>Descargar PDF
+                                    </a>
+                                    <a href="manual.html" target="_blank" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-external-link-alt me-2"></i>Ver en Pantalla Completa
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="manual-section mb-5" id="m-pasos">
+                                <h4 class="text-primary border-bottom pb-2"><i class="fas fa-rocket me-2"></i>1.
+                                    Primeros Pasos</h4>
+                                <p>Al abrir el sistema (<code>index.html</code>), verás una interfaz moderna y limpia
+                                    diseñada para la eficiencia.</p>
+                                <ul>
+                                    <li><strong>Navegación:</strong> Usa las pestañas superiores (Miembros, Pagos,
+                                        Buscar, Clases) para moverte por las distintas secciones.</li>
+                                    <li><strong>Acceso Rápido:</strong> En la barra superior tienes botones para
+                                        <strong>"Modo Acceso"</strong> (para que los socios pongan su DNI) e
+                                        <strong>"Ingresos"</strong> (para ver quién entra).
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="manual-section mb-5" id="m-dashboard">
+                                <h4 class="text-primary border-bottom pb-2"><i class="fas fa-shapes me-2"></i>2. Panel
+                                    Principal (Dashboard)</h4>
+                                <p>Nada más entrar, verás tarjetas con estadísticas clave que se actualizan en tiempo
+                                    real:</p>
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <div class="card bg-white p-3 border-0 shadow-sm h-100">
+                                            <h6 class="fw-bold text-primary">Miembros Activos</h6>
+                                            <small class="text-muted">Total de socios registrados en el sistema.</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="card bg-white p-3 border-0 shadow-sm h-100">
+                                            <h6 class="fw-bold text-success">Ingresos del Mes</h6>
+                                            <small class="text-muted">Suma total de dinero recaudado en el mes
+                                                actual.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="manual-section mb-5" id="m-miembros">
+                                <h4 class="text-primary border-bottom pb-2"><i class="fas fa-users-cog me-2"></i>3.
+                                    Gestión de Miembros</h4>
+                                <p>Administra tu base de clientes desde la pestaña <strong>"Miembros"</strong>.</p>
+                                <div class="alert alert-info border-0 shadow-sm">
+                                    <strong>Agregar un Miembro:</strong> Rellena Nombre, Apellido, Teléfono, Email, DNI
+                                    y Fecha de Vencimiento. El sistema asignará un <strong>ID único</strong>
+                                    automáticamente.
+                                </div>
+                                <p>Usa el botón <strong>"Ver Todos"</strong> para listar, editar (icono azul) o eliminar
+                                    (icono rojo) socios.</p>
+                            </div>
+
+                            <div class="manual-section mb-5" id="m-pagos">
+                                <h4 class="text-primary border-bottom pb-2"><i class="fas fa-wallet me-2"></i>4. Gestión
+                                    de Pagos y Renovaciones</h4>
+                                <p>La sección más importante para tu flujo de caja.</p>
+                                <div class="card border-primary mb-3 shadow-sm">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-primary fw-bold"><i
+                                                class="fas fa-magic me-2"></i>Renovación Automática</h5>
+                                        <p class="card-text">Si registras un pago de tipo
+                                            <strong>"Mensualidad"</strong>:
+                                        </p>
+                                        <ul>
+                                            <li><strong>Si ya venció:</strong> Sumará 1 mes desde el día de hoy.</li>
+                                            <li><strong>Si está activo:</strong> Sumará 1 mes a su fecha actual de
+                                                vencimiento.</li>
+                                        </ul>
+                                        <p class="small text-muted mb-0">¡No necesitas editar la fecha manualmente!</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="manual-section mb-5" id="m-ingresos">
+                                <h4 class="text-primary border-bottom pb-2"><i class="fas fa-id-card me-2"></i>5.
+                                    Control de Acceso (Ingresos)</h4>
+                                <p>Verifica si un socio puede entrar:</p>
+                                <ol>
+                                    <li>Busca al socio por su ID en la pestaña <strong>"Buscar"</strong>.</li>
+                                    <li>Verás una etiqueta: <strong>VERDE (ACTIVA)</strong> o <strong>ROJA
+                                            (VENCIDA)</strong>.</li>
+                                    <li>Pulsa <strong>"Registrar Ingreso"</strong> para guardar la entrada.</li>
+                                </ol>
+                                <div class="alert alert-warning border-0 shadow-sm">
+                                    <strong>Nota:</strong> Si alguien está vencido, el sistema te preguntará si deseas
+                                    permitir un "Ingreso Excepcional".
+                                </div>
+                            </div>
+
+                            <div class="manual-section mb-5" id="m-clases">
+                                <h4 class="text-primary border-bottom pb-2"><i class="fas fa-dumbbell me-2"></i>6.
+                                    Gestión de Clases</h4>
+                                <p>Organiza tus actividades grupales:</p>
+                                <ul>
+                                    <li>Crea actividades con nombre, descripción y horario.</li>
+                                    <li>Inscribe socios asociando su ID a una clase específica.</li>
+                                    <li>Controla el aforo y asistencia fácilmente.</li>
+                                </ul>
+                            </div>
+
+                            <div class="manual-section mb-5" id="m-backup">
+                                <h4 class="text-primary border-bottom pb-2"><i class="fas fa-database me-2"></i>7.
+                                    Copias de Seguridad</h4>
+                                <p class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-2"></i> ¡MUY
+                                    IMPORTANTE!</p>
+                                <p>Tus datos se guardan localmente en el navegador. Para no perderlos:</p>
+                                <ol>
+                                    <li>Usa el botón <strong>"Exportar JSON"</strong> regularmente.</li>
+                                    <li>Guarda el archivo descargado en la nube o un pendrive.</li>
+                                    <li>Si cambias de PC, usa <strong>"Importar JSON"</strong> para restaurar todo.</li>
+                                </ol>
+                            </div>
+
+                            <div class="text-center mt-5 pt-4 border-top">
+                                <p class="text-muted">¿Necesitás más ayuda?</p>
+                                <button class="btn btn-primary-custom btn-custom" onclick="openSupportModal()">
+                                    <i class="fas fa-headset me-2"></i>Contactar Soporte
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1186,14 +1353,29 @@
                 const formData = new FormData(e.target);
                 const body = Object.fromEntries(formData);
                 body.monto = parseFloat(body.monto);
-                body.usuario_id = parseInt(body.usuario_id);
 
-                // Verificar que el usuario existe
-                const usuario = storage.getUsuario(body.usuario_id);
+                // Buscar usuario por ID o DNI
+                let usuario = null;
+                const busqueda = body.usuario_id.toString().trim();
+
+                // Intentar buscar por ID primero
+                const usuarioId = parseInt(busqueda);
+                if (!isNaN(usuarioId)) {
+                    usuario = storage.getUsuario(usuarioId);
+                }
+
+                // Si no encuentra por ID, buscar por DNI
                 if (!usuario) {
-                    showAlert('Usuario no encontrado', 'danger');
+                    const usuarios = storage.getUsuarios();
+                    usuario = usuarios.find(u => u.dni && u.dni.toString().trim() === busqueda);
+                }
+
+                if (!usuario) {
+                    showAlert('Usuario no encontrado. Verifica el ID o DNI', 'danger');
                     return;
                 }
+
+                body.usuario_id = usuario.id;
 
                 // Lógica de Renovación Automática
                 let mensajeExtra = "";
@@ -1232,10 +1414,17 @@
             // BUSCAR USUARIO
             $('#formBuscarUsuario').submit(e => {
                 e.preventDefault();
-                const id = document.getElementById('usuario_id_buscar').value;
-                const user = storage.getUsuario(id);
+                const busqueda = document.getElementById('usuario_id_buscar').value.trim();
+                const usuarios = storage.getUsuarios();
+
+                // Buscar por ID o DNI
+                const user = usuarios.find(u =>
+                    u.id.toString() === busqueda ||
+                    (u.dni && u.dni.toString() === busqueda)
+                );
 
                 if (user) {
+                    const id = user.id;
                     const container = document.getElementById('infoUsuario');
                     const clasesUsuario = storage.getClasesUsuario(id);
                     const clasesHtml = clasesUsuario.length > 0
@@ -1311,19 +1500,33 @@
             // INSCRIPCIONES
             $('#formClasesUsuario').submit(e => {
                 e.preventDefault();
-                const usuario_id = parseInt(document.getElementById('usuario_clase').value, 10);
-                if (isNaN(usuario_id)) {
-                    showAlert('Ingresa un ID válido', 'warning');
+                const busqueda = document.getElementById('usuario_clase').value.trim();
+
+                // Buscar usuario por ID o DNI
+                let usuario = null;
+                const usuarios = storage.getUsuarios();
+
+                // Intentar buscar por ID primero
+                const usuarioId = parseInt(busqueda);
+                if (!isNaN(usuarioId)) {
+                    usuario = storage.getUsuario(usuarioId);
+                }
+
+                // Si no encuentra por ID, buscar por DNI
+                if (!usuario) {
+                    usuario = usuarios.find(u => u.dni && u.dni.toString().trim() === busqueda);
+                }
+
+                if (!usuario) {
+                    showAlert('Usuario no encontrado. Verifica el ID o DNI', 'danger');
                     return;
                 }
+
+                const usuario_id = usuario.id;
                 const clase_id = parseInt(document.getElementById('nombre_clase_usuario').value);
 
                 // Verificar que el usuario existe
-                const usuario = storage.getUsuario(usuario_id);
-                if (!usuario) {
-                    showAlert('Usuario no encontrado', 'danger');
-                    return;
-                }
+                // (Ya verificado arriba)
 
                 // Obtener clase por ID
                 const clase = storage.getClases().find(c => c.id === clase_id);
@@ -1356,22 +1559,34 @@
 
             // MOSTRAR CLASES DE USUARIO
             $('#btnMostrarClasesUsuario').click(() => {
-                const usuario_id_raw = document.getElementById('usuario_clase').value;
-                if (!usuario_id_raw) {
-                    showAlert('Ingresa el ID del usuario', 'warning');
-                    return;
-                }
-                const usuario_id = parseInt(usuario_id_raw, 10);
-                if (isNaN(usuario_id)) {
-                    showAlert('Ingresa un ID válido', 'warning');
+                const busqueda = document.getElementById('usuario_clase').value.trim();
+
+                if (!busqueda) {
+                    showAlert('Ingresa el ID o DNI del usuario', 'warning');
                     return;
                 }
 
-                const usuario = storage.getUsuario(usuario_id);
+                // Buscar usuario por ID o DNI
+                let usuario = null;
+                const usuarios = storage.getUsuarios();
+
+                // Intentar buscar por ID primero
+                const usuarioId = parseInt(busqueda);
+                if (!isNaN(usuarioId)) {
+                    usuario = storage.getUsuario(usuarioId);
+                }
+
+                // Si no encuentra por ID, buscar por DNI
                 if (!usuario) {
-                    showAlert('Usuario no encontrado', 'danger');
+                    usuario = usuarios.find(u => u.dni && u.dni.toString().trim() === busqueda);
+                }
+
+                if (!usuario) {
+                    showAlert('Usuario no encontrado. Verifica el ID o DNI', 'danger');
                     return;
                 }
+
+                const usuario_id = usuario.id;
 
                 const clasesUsuario = storage.getClasesUsuario(usuario_id);
                 const container = document.getElementById('listaClasesUsuario');
