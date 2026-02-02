@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AxionFit - Registro de Ingresos</title>
+    <title>FitPro Elite - Registro de Ingresos</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- DataTables -->
@@ -34,6 +34,39 @@
         .btn-primary-custom:hover {
             transform: translateY(-2px);
         }
+
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .suggestions-list li {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background-color 0.2s;
+        }
+
+        .suggestions-list li:hover {
+            background-color: #f0f4f8;
+            color: #667eea;
+        }
+
+        .suggestions-list li:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 
@@ -48,21 +81,23 @@
         <div class="card p-4 mb-4">
             <h5 class="mb-3"><i class="fas fa-search me-2"></i>Búsqueda de Miembros</h5>
             <form id="formBuscar" class="row g-3 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">ID o DNI del Miembro</label>
-                    <input type="text" id="inputMiembro" class="form-control" placeholder="ID o DNI">
+                <div class="col-md-4 position-relative">
+                    <label class="form-label">ID, DNI, Nombre o Apellido</label>
+                    <input type="text" id="inputBusquedaPrincipal" class="form-control"
+                        placeholder="Ej: 1, 12345678 o Juan" autocomplete="off">
+                    <ul id="listaSugerencias" class="suggestions-list d-none"></ul>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Teléfono</label>
                     <input type="text" id="inputTelefono" class="form-control" placeholder="Ej: 123-456-7890">
                 </div>
-                <div class="col-md-3">
-                    <button class="btn btn-primary-custom btn-custom" type="submit">
+                <div class="col-md-2">
+                    <button class="btn btn-primary-custom btn-custom w-100" type="submit">
                         <i class="fas fa-search me-2"></i>Buscar
                     </button>
                 </div>
-                <div class="col-md-3">
-                    <button type="button" id="btnMostrarTodos" class="btn btn-outline-primary btn-custom">
+                <div class="col-md-2">
+                    <button type="button" id="btnMostrarTodos" class="btn btn-outline-primary btn-custom w-100">
                         <i class="fas fa-list me-2"></i>Ver Todos
                     </button>
                 </div>
@@ -104,7 +139,10 @@
                     <tr>
                         <th>ID</th>
                         <th>Miembro ID</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
                         <th>Fecha/Hora</th>
+                        <th>Estado Pago</th>
                         <th>Acción</th> <!-- Nueva columna -->
                     </tr>
                 </thead>
@@ -160,11 +198,13 @@
             init() {
                 if (!localStorage.getItem('gym_usuarios')) localStorage.setItem('gym_usuarios', '[]');
                 if (!localStorage.getItem('gym_ingresos')) localStorage.setItem('gym_ingresos', '[]');
+                if (!localStorage.getItem('gym_pagos')) localStorage.setItem('gym_pagos', '[]');
                 if (!localStorage.getItem('gym_next_id')) localStorage.setItem('gym_next_id', '1');
             }
             getNextId() { const n = parseInt(localStorage.getItem('gym_next_id')); localStorage.setItem('gym_next_id', String(n + 1)); return n; }
             getUsuarios() { return JSON.parse(localStorage.getItem('gym_usuarios') || '[]'); }
             getUsuario(id) { return this.getUsuarios().find(u => u.id === parseInt(id)); }
+            getPagos() { return JSON.parse(localStorage.getItem('gym_pagos') || '[]'); }
             getIngresos() { return JSON.parse(localStorage.getItem('gym_ingresos') || '[]'); }
             addIngreso(i) { const arr = this.getIngresos(); i.id = this.getNextId(); arr.push(i); localStorage.setItem('gym_ingresos', JSON.stringify(arr)); }
         }
@@ -172,8 +212,12 @@
 
         // Función para verificar si una membresía está vencida
         function estaVencida(fechaVencimiento) {
+            if (!fechaVencimiento || String(fechaVencimiento).trim() === '') return true;
             const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
             const vencimiento = new Date(fechaVencimiento);
+            if (Number.isNaN(vencimiento.getTime())) return true;
+            vencimiento.setHours(0, 0, 0, 0);
             return vencimiento < hoy;
         }
 
@@ -189,13 +233,28 @@
         // DataTable
         const dt = $('#tablaIngresos').DataTable({ language: { search: 'Buscar:', lengthMenu: 'Mostrar _MENU_', info: '_START_ - _END_ de _TOTAL_', paginate: { first: 'Primero', last: 'Último', next: 'Siguiente', previous: 'Anterior' }, emptyTable: 'Sin registros' }, order: [[0, 'desc']] });
         function refrescarTabla() {
-            const data = storage.getIngresos().map(i => [
-                i.id,
-                i.usuario_id,
-                new Date(i.fecha).toLocaleString('es-ES'),
-                `<button class='btn btn-sm btn-warning me-2' onclick='editarIngreso(${i.id})'>Editar</button>
-         <button class='btn btn-sm btn-danger' onclick='eliminarIngreso(${i.id})'>Eliminar</button>`
-            ]).sort((a, b) => b[0] - a[0]);
+            const pagos = storage.getPagos();
+            const data = storage.getIngresos().map(i => {
+                const usuario = storage.getUsuario(i.usuario_id);
+                const nombre = usuario ? usuario.nombre : 'Desconocido';
+                const apellido = usuario ? usuario.apellido : '';
+
+                const pagosUsuario = pagos
+                    .filter(p => parseInt(p.usuario_id) === parseInt(i.usuario_id))
+                    .filter(p => p.fecha)
+                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                const estadoPago = pagosUsuario.length ? (pagosUsuario[0].estado || 'N/A') : 'Sin pagos';
+                return [
+                    i.id,
+                    i.usuario_id,
+                    nombre,
+                    apellido,
+                    new Date(i.fecha).toLocaleString('es-ES'),
+                    estadoPago,
+                    `<button class='btn btn-sm btn-warning me-2' onclick='editarIngreso(${i.id})'>Editar</button>
+             <button class='btn btn-sm btn-danger' onclick='eliminarIngreso(${i.id})'>Eliminar</button>`
+                ];
+            }).sort((a, b) => b[0] - a[0]);
             dt.clear().rows.add(data).draw();
         }
         refrescarTabla();
@@ -214,25 +273,34 @@
             }
         });
 
-        // Buscar miembro (mejorado)
+        // Buscar miembro (unificado)
         $('#formBuscar').on('submit', function (e) {
             e.preventDefault();
-            const id = $('#inputMiembro').val().trim();
+            const busqueda = $('#inputBusquedaPrincipal').val().trim();
             const telefono = $('#inputTelefono').val().trim();
 
             let usuario = null;
+            const usuarios = storage.getUsuarios();
 
-            // Buscar por ID o DNI
-            if (id) {
-                const usuarios = storage.getUsuarios();
-                usuario = usuarios.find(u =>
-                    u.id.toString() === id ||
-                    (u.dni && u.dni.toString() === id)
-                );
+            if (busqueda) {
+                // Intentar buscar por ID (si es un número exacto)
+                if (!isNaN(busqueda) && busqueda.trim() !== '') {
+                    usuario = usuarios.find(u => u.id === parseInt(busqueda));
+                }
+
+                // Busqueda por DNI, Nombre o Apellido (insensitive)
+                if (!usuario) {
+                    const busquedaLower = busqueda.toLowerCase();
+                    usuario = usuarios.find(u =>
+                        (u.dni && String(u.dni).includes(busqueda)) ||
+                        (u.nombre && u.nombre.toLowerCase().includes(busquedaLower)) ||
+                        (u.apellido && u.apellido.toLowerCase().includes(busquedaLower))
+                    );
+                }
             }
-            // Buscar por teléfono si no se encontró por ID
-            else if (telefono) {
-                const usuarios = storage.getUsuarios();
+
+            // Si no se encontró nada y hay teléfono, buscar por teléfono
+            if (!usuario && telefono) {
                 usuario = usuarios.find(u => u.telefono && u.telefono.includes(telefono));
             }
 
@@ -240,8 +308,51 @@
                 mostrarMiembro(usuario);
                 $('#listaMiembrosContainer').addClass('d-none');
             } else {
-                alert('Miembro no encontrado. Intente con otro ID o teléfono.');
+                alert('Miembro no encontrado. Intente con ID, DNI o teléfono.');
                 $('#resultadoBusqueda').addClass('d-none');
+            }
+        });
+
+        // Autocompletado en tiempo real
+        $('#inputBusquedaPrincipal').on('input', function () {
+            const busqueda = $(this).val().toLowerCase().trim();
+            const suggestionsList = $('#listaSugerencias');
+            suggestionsList.empty().addClass('d-none');
+
+            if (busqueda.length < 2) return; // Esperar al menos 2 caracteres
+
+            const usuarios = storage.getUsuarios();
+            const sugerencias = usuarios.filter(u =>
+                (u.nombre && u.nombre.toLowerCase().includes(busqueda)) ||
+                (u.apellido && u.apellido.toLowerCase().includes(busqueda)) ||
+                (u.dni && String(u.dni).includes(busqueda))
+            );
+
+            if (sugerencias.length > 0) {
+                sugerencias.slice(0, 10).forEach(u => { // Mostrar máximo 10 sugerencias
+                    const li = $(`<li>
+                        <strong>${u.nombre} ${u.apellido}</strong><br>
+                        <small class="text-muted">DNI: ${u.dni || 'N/A'} - ID: ${u.id}</small>
+                    </li>`);
+
+                    li.on('click', function () {
+                        // Al hacer clic, seleccionamos el usuario directamente
+                        mostrarMiembro(u);
+                        $('#listaMiembrosContainer').addClass('d-none');
+                        $('#inputBusquedaPrincipal').val(`${u.nombre} ${u.apellido}`); // Poner nombre en el input
+                        suggestionsList.addClass('d-none'); // Ocultar lista
+                    });
+
+                    suggestionsList.append(li);
+                });
+                suggestionsList.removeClass('d-none');
+            }
+        });
+
+        // Ocultar sugerencias al hacer clic fuera
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#inputBusquedaPrincipal').length && !$(e.target).closest('#listaSugerencias').length) {
+                $('#listaSugerencias').addClass('d-none');
             }
         });
 
@@ -346,7 +457,7 @@
 
             alert(mensaje);
             $('#resultadoBusqueda').addClass('d-none');
-            $('#inputMiembro').val('');
+            $('#inputBusquedaPrincipal').val('');
             $('#inputTelefono').val('');
             refrescarTabla();
         }

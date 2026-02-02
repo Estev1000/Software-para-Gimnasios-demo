@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso Gimnasio - Login DNI</title>
+    <title>Acceso - FitPro Elite</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
     <div class="background-overlay"></div>
     <div class="login-container">
         <header class="login-header">
-            <div class="logo-icon">
-                <i class="fa-solid fa-dumbbell"></i>
+            <div class="logo-container-main mb-3">
+                <img src="logo.png" alt="Logo">
             </div>
             <h1>Bienvenido</h1>
             <p>Ingresa tu DNI para acceder</p>
@@ -27,6 +27,8 @@
             <input type="text" id="dniInput" placeholder="DNI" readonly class="dni-display">
             <span class="cursor">|</span>
         </div>
+
+        <div id="pago-info" class="pago-info hidden"></div>
 
         <div class="keypad">
             <button class="key" onclick="appendNumber('1')">1</button>

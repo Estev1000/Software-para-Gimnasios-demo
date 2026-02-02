@@ -31,101 +31,97 @@
     <div id="authOverlay"
         class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-75 blur-bg">
         <div class="card p-4" style="min-width:320px;max-width:90%;">
-            <h5 class="text-center mb-3"><i class="fas fa-lock me-2"></i>Acceso Solo Dueños</h5>
-            <form id="ownerLoginForm" class="d-grid gap-3">
-                <input type="password" id="ownerPass" class="form-control" placeholder="Contraseña" required>
-                <button type="submit" class="btn btn-primary">Ingresar</button>
-            </form>
-            <small class="d-block mt-2 text-muted text-center">Solicite la contraseña al propietario.</small>
-            <div class="text-center mt-3">
-                <a href="index.html" class="btn btn-sm btn-outline-light">Volver al Panel</a>
+            <div class="card p-4" style="min-width:320px;max-width:90%;">
+                <div class="text-center mb-3">
+                    <i class="fas fa-lock fa-3x text-warning"></i>
+                </div>
+                <h4 class="text-center mb-2">Acceso Restringido</h4>
+                <p class="text-center text-muted mb-4">Esta sección es exclusiva para Dueños.</p>
+
+                <div class="d-grid gap-2">
+                    <a href="index.html" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Panel Principal
+                    </a>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Contenido protegido -->
-    <div id="protectedContent" style="display:none;" class="container py-5">
-        <div class="d-flex justify-content-end mb-3">
-            <a href="index.html" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Volver al
-                Panel</a>
+        <!-- Contenido protegido -->
+        <div id="protectedContent" style="display:none;" class="container py-5">
+            <div class="d-flex justify-content-end mb-3">
+                <a href="index.html" class="btn btn-outline-primary"><i class="fas fa-arrow-left me-2"></i>Volver al
+                    Panel</a>
+            </div>
+            <h2 class="text-center mb-4"><i class="fas fa-chart-line me-2"></i>Ingresos del Mes Actual</h2>
+
+            <div class="card p-4 mb-4 text-center">
+                <h5>Total del Mes</h5>
+                <h1 id="totalMes" class="display-5 fw-bold text-success">$0.00</h1>
+            </div>
+
+            <div class="card p-4">
+                <h5 class="mb-3"><i class="fas fa-list me-2"></i>Detalle de Pagos</h5>
+                <table id="tablaPagosMes" class="table table-striped w-100">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Monto</th>
+                            <th>Tipo</th>
+                            <th>ID Miembro</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
-        <h2 class="text-center mb-4"><i class="fas fa-chart-line me-2"></i>Ingresos del Mes Actual</h2>
 
-        <div class="card p-4 mb-4 text-center">
-            <h5>Total del Mes</h5>
-            <h1 id="totalMes" class="display-5 fw-bold text-success">$0.00</h1>
-        </div>
-
-        <div class="card p-4">
-            <h5 class="mb-3"><i class="fas fa-list me-2"></i>Detalle de Pagos</h5>
-            <table id="tablaPagosMes" class="table table-striped w-100">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Fecha</th>
-                        <th>Monto</th>
-                        <th>Tipo</th>
-                        <th>ID Miembro</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Storage wrapper para acceder a pagos en localStorage
-        class FitStorage {
-            getPagos() { return JSON.parse(localStorage.getItem('gym_pagos') || '[]'); }
-        }
-        const store = new FitStorage();
-
-        function renderTable() {
-            const pagos = store.getPagos();
-            const now = new Date();
-            const delMes = pagos.filter(p => { const d = new Date(p.fecha); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
-            const total = delMes.reduce((s, p) => s + parseFloat(p.monto), 0);
-            document.getElementById('totalMes').textContent = `$${total.toFixed(2)}`;
-
-            const dt = $('#tablaPagosMes').DataTable({ destroy: true, order: [[1, 'desc']], language: { search: 'Buscar', lengthMenu: 'Mostrar _MENU_', info: '_START_-_END_ de _TOTAL_', paginate: { first: 'Primero', last: 'Último', next: 'Sig', previous: 'Ant' }, emptyTable: 'Sin datos' } });
-            dt.clear();
-            dt.rows.add(delMes.map((p, i) => [i + 1, p.fecha, `$${parseFloat(p.monto).toFixed(2)}`, p.tipo, p.usuario_id]));
-            dt.draw();
-        }
-
-        // AUTENTICACIÓN AUTOMÁTICA
-        $(document).ready(function () {
-            const urlParams = new URLSearchParams(window.location.search);
-            const isPremium = localStorage.getItem('gym_premium_active') === 'true';
-
-            // Si viene desde index.html verificado O es usuario Premium activo
-            if (urlParams.get('auth') === 'verified' || isPremium) {
-                $('#authOverlay').hide();
-                $('#protectedContent').show();
-                renderTable();
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // Storage wrapper para acceder a pagos en localStorage
+            class FitStorage {
+                getPagos() { return JSON.parse(localStorage.getItem('gym_pagos') || '[]'); }
             }
-            // Si no, pedimos clave por seguridad (opcional, o redireccionamos)
-            else {
-                // Mantenemos el formulario por si intentan entrar directo
-                $('#ownerLoginForm').on('submit', e => {
-                    e.preventDefault();
-                    if ($('#ownerPass').val() === 'duenos2025') {
-                        $('#authOverlay').fadeOut(200, () => { $('#protectedContent').fadeIn(200); renderTable(); });
-                    } else {
-                        alert('Contraseña incorrecta');
-                    }
-                });
+            const store = new FitStorage();
+
+            function renderTable() {
+                const pagos = store.getPagos();
+                const now = new Date();
+                const delMes = pagos.filter(p => { const d = new Date(p.fecha); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); });
+                const total = delMes.reduce((s, p) => s + parseFloat(p.monto), 0);
+                document.getElementById('totalMes').textContent = `$${total.toFixed(2)}`;
+
+                const dt = $('#tablaPagosMes').DataTable({ destroy: true, order: [[1, 'desc']], language: { search: 'Buscar', lengthMenu: 'Mostrar _MENU_', info: '_START_-_END_ de _TOTAL_', paginate: { first: 'Primero', last: 'Último', next: 'Sig', previous: 'Ant' }, emptyTable: 'Sin datos' } });
+                dt.clear();
+                dt.rows.add(delMes.map((p, i) => [i + 1, p.fecha, `$${parseFloat(p.monto).toFixed(2)}`, p.tipo, p.usuario_id]));
+                dt.draw();
             }
-        });
-    </script>
-    <!-- Botón flotante para volver al panel -->
-    <a href="index.html" class="btn btn-light shadow position-fixed" style="bottom:20px;left:20px;z-index:2000;">
-        <i class="fas fa-arrow-left me-2"></i>Panel
-    </a>
+
+            // AUTENTICACIÓN AUTOMÁTICA UNIFICADA
+            $(document).ready(function () {
+                // Verificamos si el modo premium está activo
+                const isPremium = localStorage.getItem('gym_premium_active') === 'true';
+                const urlParams = new URLSearchParams(window.location.search);
+                const authVerified = urlParams.get('auth') === 'verified';
+
+                // Si es premium o viene con auth=verified, entra directo
+                if (isPremium || authVerified) {
+                    $('#authOverlay').hide();
+                    $('#protectedContent').show();
+                    renderTable();
+                } else {
+                    // Si no, se queda en el Overlay
+                    console.log('Acceso denegado: no es premium');
+                }
+            });
+        </script>
+        <!-- Botón flotante para volver al panel -->
+        <a href="index.html" class="btn btn-light shadow position-fixed" style="bottom:20px;left:20px;z-index:2000;">
+            <i class="fas fa-arrow-left me-2"></i>Panel
+        </a>
 </body>
 
 </html>

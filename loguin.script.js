@@ -1,9 +1,14 @@
 const dniInput = document.getElementById('dniInput');
 const messageContainer = document.getElementById('message-container');
+const pagoInfo = document.getElementById('pago-info');
 
 // Helper to get data from localStorage
 function getUsuarios() {
     return JSON.parse(localStorage.getItem('gym_usuarios') || '[]');
+}
+
+function getPagos() {
+    return JSON.parse(localStorage.getItem('gym_pagos') || '[]');
 }
 
 function getIngresos() {
@@ -20,21 +25,124 @@ function getNextId() {
     return nextId;
 }
 
+function isFechaVencimientoValidaYVigente(fechaVencimientoStr) {
+    if (!fechaVencimientoStr || String(fechaVencimientoStr).trim() === '') return false;
+    const fechaVencimiento = new Date(fechaVencimientoStr);
+    if (Number.isNaN(fechaVencimiento.getTime())) return false;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    fechaVencimiento.setHours(0, 0, 0, 0);
+    return fechaVencimiento >= hoy;
+}
+
+function getUltimoPagoMensualidadUsuario(pagos, userId) {
+    const pagosMensualidad = (pagos || [])
+        .filter(p => p && String(p.usuario_id) === String(userId))
+        .filter(p => String(p.tipo || '').toLowerCase() === 'mensualidad')
+        .filter(p => p.fecha)
+        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    return pagosMensualidad.length ? pagosMensualidad[0] : null;
+}
+
+function parseDateOnly(dateStr) {
+    if (!dateStr || String(dateStr).trim() === '') return null;
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return null;
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+
+function formatDateEsShort(dateStr) {
+    const d = parseDateOnly(dateStr);
+    if (!d) return '';
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy}`;
+}
+
+function daysUntil(dateStr) {
+    const d = parseDateOnly(dateStr);
+    if (!d) return null;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const diffMs = d.getTime() - hoy.getTime();
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
+function hidePagoInfo() {
+    if (!pagoInfo) return;
+    pagoInfo.textContent = '';
+    pagoInfo.classList.add('hidden');
+}
+
+function updatePagoInfoForDni(dni) {
+    if (!pagoInfo) return;
+    const dniStr = String(dni || '').trim();
+    if (dniStr.length < 5) {
+        hidePagoInfo();
+        return;
+    }
+
+    const usuarios = getUsuarios();
+    const user = usuarios.find(u => u && u.dni && u.dni.toString().trim() === dniStr);
+    if (!user) {
+        hidePagoInfo();
+        return;
+    }
+
+    const pagos = getPagos();
+    const ultimoPagoMensualidad = getUltimoPagoMensualidadUsuario(pagos, user.id);
+    const ultimoEstado = String(ultimoPagoMensualidad?.estado || '').toLowerCase();
+    const ultimoEsPendiente = ultimoEstado.includes('pendiente');
+    const ultimoEsPagado = ultimoEstado.includes('pagado');
+    const tieneMensualidad = !!ultimoPagoMensualidad;
+    const membresiaVigente = isFechaVencimientoValidaYVigente(user.fecha_vencimiento);
+
+    const estadoPagoValido = ultimoEsPagado || ultimoEsPendiente;
+    const activo = membresiaVigente && tieneMensualidad && estadoPagoValido;
+    if (!activo) {
+        hidePagoInfo();
+        return;
+    }
+
+    const diasRestantes = daysUntil(user.fecha_vencimiento);
+    if (diasRestantes === null) {
+        hidePagoInfo();
+        return;
+    }
+
+    const fechaPagoFmt = formatDateEsShort(ultimoPagoMensualidad?.fecha) || String(ultimoPagoMensualidad?.fecha || '').trim();
+    const fechaVencFmt = formatDateEsShort(user.fecha_vencimiento) || String(user.fecha_vencimiento || '').trim();
+    const diasText = diasRestantes === 1 ? '1 día' : `${diasRestantes} días`;
+    const estadoText = ultimoEsPendiente ? 'PENDIENTE' : 'OK';
+
+    pagoInfo.innerHTML = `
+        <div><strong>Pagó:</strong> ${fechaPagoFmt || 'N/D'}</div>
+        <div><strong>Vence:</strong> ${fechaVencFmt || 'N/D'}</div>
+        <div><strong>Faltan:</strong> ${diasText} <span style="opacity:0.85">(Estado: ${estadoText})</span></div>
+    `;
+    pagoInfo.classList.remove('hidden');
+}
+
 function appendNumber(number) {
     if (dniInput.value.length < 8) { // MAX 8 chars for DNI
         dniInput.value += number;
         clearMessage();
+        updatePagoInfoForDni(dniInput.value);
     }
 }
 
 function clearInput() {
     dniInput.value = '';
     clearMessage();
+    hidePagoInfo();
 }
 
 function backspace() {
     dniInput.value = dniInput.value.slice(0, -1);
     clearMessage();
+    updatePagoInfoForDni(dniInput.value);
 }
 
 function submitLogin() {
@@ -64,22 +172,51 @@ function submitLogin() {
         const user = usuarios.find(u => u.dni && u.dni.toString().trim() === dni);
 
         if (user) {
-            // Check if membership is expired
-            const fechaVencimiento = new Date(user.fecha_vencimiento);
-            const hoy = new Date();
-            // Reset time part for accurate date comparison
-            hoy.setHours(0, 0, 0, 0);
-            fechaVencimiento.setHours(0, 0, 0, 0);
+            const pagos = getPagos();
+            const ultimoPagoMensualidad = getUltimoPagoMensualidadUsuario(pagos, user.id);
+            const ultimoEstado = String(ultimoPagoMensualidad?.estado || '').toLowerCase();
+            const ultimoEsPendiente = ultimoEstado.includes('pendiente');
+            const ultimoEsPagado = ultimoEstado.includes('pagado');
+            const tieneMensualidad = !!ultimoPagoMensualidad;
 
-            if (fechaVencimiento < hoy) {
-                // EXPIRED
-                showMessage(`Hola ${user.nombre}, tu cuota Venció el ${user.fecha_vencimiento}`, 'error');
+            const membresiaVigente = isFechaVencimientoValidaYVigente(user.fecha_vencimiento);
+
+            // Regla de acceso:
+            // - Requiere membresía vigente (fecha válida y no vencida)
+            // - Requiere que exista pago de Mensualidad (si está PENDIENTE, se permite pero se avisa)
+            const estadoPagoValido = ultimoEsPagado || ultimoEsPendiente;
+            const accesoPermitido = membresiaVigente && tieneMensualidad && estadoPagoValido;
+
+            if (!accesoPermitido) {
+                const partes = [];
+                if (!membresiaVigente) {
+                    partes.push(user.fecha_vencimiento ? `tu cuota venció el ${user.fecha_vencimiento}` : 'no registrás una membresía vigente');
+                }
+                if (!tieneMensualidad) {
+                    partes.push('no tenés un pago de Mensualidad registrado');
+                } else if (!estadoPagoValido) {
+                    partes.push('tu último pago de Mensualidad tiene un estado no válido');
+                }
+
+                showMessage(`Hola ${user.nombre}, acceso denegado: ${partes.join(' y ')}.`, 'error');
                 playSound('error');
-
-                startBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Vencido';
-
+                startBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Denegado';
             } else {
-                // VALID - REGISTER ACCESS
+                if (ultimoEsPendiente) {
+                    const ingresos = getIngresos();
+                    const newIngreso = {
+                        id: getNextId(),
+                        usuario_id: user.id,
+                        fecha: new Date().toISOString()
+                    };
+                    ingresos.push(newIngreso);
+                    saveIngresos(ingresos);
+
+                    showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido (PAGO PENDIENTE).`, 'warning');
+                    playSound('warning');
+                    startBtn.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Pendiente';
+                    return;
+                }
                 const ingresos = getIngresos();
                 const newIngreso = {
                     id: getNextId(),
@@ -91,7 +228,6 @@ function submitLogin() {
 
                 showMessage(`¡Bienvenido/a ${user.nombre}! Acceso Permitido.`, 'success');
                 playSound('success');
-
                 startBtn.innerHTML = '<i class="fa-solid fa-check"></i> Adelante';
             }
 
@@ -144,6 +280,22 @@ function playSound(type) {
 
         oscillator.start(now);
         oscillator.stop(now + 0.3);
+    } else if (type === 'warning') {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(660, now);
+        oscillator.frequency.linearRampToValueAtTime(440, now + 0.18);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        gainNode.gain.setValueAtTime(0.25, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+        oscillator.start(now);
+        oscillator.stop(now + 0.25);
     } else {
         // ALARMA DE ERROR (VENCIDO)
         // Secuencia de 3 pitidos fuertes y agresivos
@@ -166,10 +318,9 @@ function playSound(type) {
             osc.stop(startTime + 0.15);
         };
 
-        // Reproducir 3 pitidos con espacios de 0.2 segundos
         playAlarmBeep(now);
-        playAlarmBeep(now + 0.25);
-        playAlarmBeep(now + 0.5);
+        playAlarmBeep(now + 0.2); // Segundo pitido
+        playAlarmBeep(now + 0.4); // Tercer pitido
     }
 }
 
