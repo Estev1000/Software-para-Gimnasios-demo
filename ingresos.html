@@ -143,6 +143,7 @@
                         <th>Apellido</th>
                         <th>Fecha/Hora</th>
                         <th>Estado Pago</th>
+                        <th>Actividad</th>
                         <th>Acción</th> <!-- Nueva columna -->
                     </tr>
                 </thead>
@@ -207,6 +208,13 @@
             getPagos() { return JSON.parse(localStorage.getItem('gym_pagos') || '[]'); }
             getIngresos() { return JSON.parse(localStorage.getItem('gym_ingresos') || '[]'); }
             addIngreso(i) { const arr = this.getIngresos(); i.id = this.getNextId(); arr.push(i); localStorage.setItem('gym_ingresos', JSON.stringify(arr)); }
+            getClases() { return JSON.parse(localStorage.getItem('gym_clases') || '[]'); }
+            getInscripciones() { return JSON.parse(localStorage.getItem('gym_inscripciones') || '[]'); }
+            getClasesUsuario(userId) {
+                const inscripciones = this.getInscripciones();
+                const clases = this.getClases();
+                return inscripciones.filter(i => i.usuario_id === parseInt(userId)).map(i => clases.find(c => c.id === i.clase_id)).filter(c => c);
+            }
         }
         const storage = new GymStorage();
 
@@ -265,6 +273,7 @@
                     apellido,
                     new Date(i.fecha).toLocaleString('es-ES'),
                     estadoPago,
+                    i.actividad || 'N/A',
                     `<button class='btn btn-sm btn-warning me-2' onclick='editarIngreso(${i.id})'>Editar</button>
              <button class='btn btn-sm btn-danger' onclick='eliminarIngreso(${i.id})'>Eliminar</button>`
                 ];
@@ -459,10 +468,14 @@
 
         // Función para registrar ingreso
         function registrarIngreso(usuario, esExcepcional = false) {
+            const clasesUsuario = storage.getClasesUsuario(usuario.id);
+            const actividad = clasesUsuario.map(c => c.nombre).join(', ') || 'Sin Actividad';
+
             storage.addIngreso({
                 usuario_id: usuario.id,
                 fecha: new Date().toISOString(),
-                excepcional: esExcepcional
+                excepcional: esExcepcional,
+                actividad: actividad
             });
 
             const mensaje = esExcepcional
