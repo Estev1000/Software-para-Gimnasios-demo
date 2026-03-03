@@ -2250,7 +2250,7 @@
 
         window.enterProCode = function () {
             const code = prompt("Ingresa tu código de activación:");
-            if (code === 'gym_pro_2025' || code === 'duenos2025') {
+            if (code === 'gym_pro_marzo_2026' || code === 'marzo_2026') {
                 localStorage.setItem('gym_premium_active', 'true');
                 alert("¡Felicidades! Versión PREMIUM Activada.");
                 location.reload();
@@ -2265,7 +2265,7 @@
 
         // Check Premium Status on Load
         const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('access') === 'gym_pro_2025') {
+        if (urlParams.get('access') === 'gym_pro_marzo_2026') {
             localStorage.setItem('gym_premium_active', 'true');
             window.history.replaceState({}, document.title, window.location.pathname);
             alert("¡Pago Exitoso! Bienvenido a FitPro Elite PREMIUM 🚀");
